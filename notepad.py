@@ -1,11 +1,28 @@
+from datetime import datetime
 from tkinter import *
 from tkinter import ttk
+from tkinter import font as font_
 from tkinter import filedialog
 from tkinter import messagebox
 import tkinter as tk
 import webbrowser
 import pyautogui
+import threading
 
+"""
+make certain errors appear in dialog boxes
+make mini screen for replace, find and search
+
+search with google or wolfram alpha
+find in page...
+replace certain string
+
+n to make changes permanent learn how to use config files
+"""
+
+
+def delete():
+    pyautogui.typewrite(['delete'])
 
 
 class NotePad:
@@ -18,26 +35,25 @@ class NotePad:
 
     def mini_note(self):
 
-        self.master.title('Untitled - Psarris\' Notepad')
+        self.master.title('*Untitled - Psarris\' Notepad')
         self.master.resizable(True, True)
         NotePad.root.iconbitmap('images__2_o5_2.ico')
         self.master.iconbitmap('images__2_o5_2.ico')
-        self.master.geometry("650x550")
+        self.master.geometry("650x500")
         self.master.option_add('*tearOff', False)
         self.master.configure(background='#FFFFFF')
 
         # frame_menu = ttk.Frame(self.master)
         menu = Menu(self.master)
+        self.menu = menu
         self.master.config(menu=menu)
 
         self.master.bind('<Control-n>', lambda e: self.new())
         self.master.bind('<Control-Shift-KeyPress-N>', lambda e: self.new_window())
         self.master.bind('<Control-p>', lambda e: self.open_file())
         self.master.bind('<Control-s>', lambda e: self.save_file())
-        # self.master.bind('<Control-z>', lambda e: self.undo())
         self.master.bind('<Control-c>', lambda e: self.copy())
         self.master.bind('<Control-x>', lambda e: self.cut())
-        # self.master.bind('<KeyPress-Delete>', lambda e: self.add_undo())
         self.master.bind('<Control-Shift-KeyPress-S>', lambda e: self.save_as_file())
 
         file = Menu(menu)
@@ -52,14 +68,17 @@ class NotePad:
         file.add_command(label='Exit', command=self.exit_notepad)
 
         edit = Menu(menu)
+        self.edit = edit
         menu.add_cascade(menu=edit, label='Edit')
-        # edit.add_command(label='Undo', command="", accelerator="Ctrl Z")
-        # edit.add_separator()
+        edit.add_command(label='Delete', command=delete)
+        edit.add_separator()
         edit.add_command(label='Cut', command=self.cut, accelerator="Ctrl X")
         edit.add_command(label='Copy', command=self.copy, accelerator="Ctrl C")
         edit.add_command(label='Paste', command=self.paste, accelerator="Ctrl V")
-        edit.add_separator()
+        edit.add_command(label='Undo', command=self.undo, accelerator="Ctrl Z")
         edit.add_command(label='Select all', command=self.select_all, accelerator="Ctrl A")
+        edit.add_separator()
+        edit.add_command(label='Date/Time', command=self.date)
 
         format_ = Menu(menu)
         menu.add_cascade(menu=format_, label='Format')
@@ -85,9 +104,9 @@ class NotePad:
         frame_text = ttk.Frame(self.master)
         frame_text.pack(fill=BOTH, expand=True)
         self.text = Text(frame_text)
-        self.scrollbar = ttk.Scrollbar(self.text, orient=VERTICAL, command=self.text.yview)
+        self.scrollbar = ttk.Scrollbar(frame_text, orient=VERTICAL, command=self.text.yview)
         self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.text.config(yscrollcommand=self.scrollbar.set, font=('Arial', 10, 'normal'))
+        self.text.config(yscrollcommand=self.scrollbar.set, font=('Arial', 10, 'normal'), undo=True)
         self.text.pack(fill=BOTH, expand=True, pady=1)
         self.dirr = ''
         self.initial = ''
@@ -104,20 +123,18 @@ class NotePad:
         self.crlf.grid(row=0, column=2)
         encoding = ttk.Label(label_frame, text="UTF-8", width=10)
         encoding.grid(row=0, column=3)
-        space = ttk.Label(label_frame, text="", width=10)
-        space.grid(row=0, column=4)
+        self.space = ttk.Label(label_frame, text="", width=10)
+        self.space.grid(row=0, column=4)
 
-        self.update_label()
         self.for_name = ''
-        self.check_title()
-
-
+        t1 = threading.Thread(target=self.update_label)
+        t2 = threading.Thread(target=self.check_title)
+        t1.start()
+        t2.start()
 
         self.master.protocol("WM_DELETE_WINDOW", self.exit_notepad)
 
         NotePad.root.mainloop()
-
-        # expendable
 
     # font box begins here
     def import_(self):
@@ -150,19 +167,13 @@ class NotePad:
         self.list_scroll = ttk.Scrollbar(self.parent, orient=VERTICAL, command=self.list_main.yview)
         self.list_main.config(yscrollcommand=self.list_scroll.set)
 
-        self.list_main.insert(1, 'Algerian')
-        self.list_main.insert(2, 'Arial (default)')
-        self.list_main.insert(END, 'Arial Rounded MT', 'Arial Unicode MS')
-        self.list_main.insert(END, 'Baskerville Old Face')
-        self.list_main.insert(END, 'Brittanic')
-        self.list_main.insert(END, 'Calibri')
-        self.list_main.insert(END, 'Cooper')
-        self.list_main.insert(END, 'Franklin Gothic')
-        self.list_main.insert(END, 'Georgia')
-        self.list_main.select_set(1)
+        fonts = list(font_.families())
+        for f in sorted(fonts):
+            self.list_main.insert(END, f)
+
 
         self.list_scroll.place(x=159, y=46, anchor='n', height=116)
-        self.list_main.yview_moveto('0.11')
+        self.list_main.yview_moveto('0.1')
         self.list_main.place(x=20, y=44, height=120, width=150)
 
         # .. listbox2
@@ -175,7 +186,6 @@ class NotePad:
         self.list_style.insert(4, 'italic')
         self.list_style.insert(5, 'bold italic')
 
-        self.list_style.select_set(0)
 
         self.list_scroll1.place(x=314, y=46, anchor='n', height=116)
         self.list_style.place(x=175, y=44, width=150, height=120)
@@ -197,10 +207,9 @@ class NotePad:
         self.list_size.insert(END, '48')
         self.list_size.insert(END, '72')
 
-        self.list_size.select_set(1)
 
         self.list_scroll2.place(x=375, y=46, anchor='n', height=116)
-        self.list_size.yview_moveto('0.11')
+        self.list_size.yview_moveto('0.1')
         self.list_size.place(x=333, y=44, width=53, height=120)
 
         """
@@ -217,7 +226,7 @@ class NotePad:
         sample_label = ttk.Label(self.parent, text='Sample!')
         sample_label.place(x=170, y=191, anchor='center', height=20)
 
-        self.sample_label1 = ttk.Label(frame, text='AaBbCc')
+        self.sample_label1 = ttk.Label(frame, text='AaBbCc', font=(self.fontt, self.sizee, self.stylee))
         self.sample_label1.place(relx=0.5, rely=0.5, anchor='center')
 
         # ok n cancel button (2)
@@ -232,35 +241,44 @@ class NotePad:
         self.list_size.bind('<<ListboxSelect>>', lambda e: self.change_size())
         self.parent.bind('<Return>', lambda a: self.ok_())
 
+
+
+        # function
+        try:
+            self.list_main.select_set(int(self.x_))
+            self.list_size.select_set(self.z)
+            self.list_style.select_set(self.y)
+            print('trying')
+        except AttributeError:
+            print('e can work')
+            self.list_main.select_set(33)
+            self.list_size.select_set(0)
+            self.list_size.select_set(1)
+
         self.parent.protocol("WM_DELETE_WINDOW", self.cancel_)
 
         self.parent.mainloop()
-
-        # function
 
     def change_font(self):
         x = self.list_main.curselection()
         self.fontt = self.list_main.get(x)
         self.text.config(font=(self.fontt, self.sizee, self.stylee))
         self.sample_label1.config(font=(self.fontt, self.sizee, self.stylee))
-        # self.entry_main.delete(0, END)
-        # if self.fontt == 'Arial (default)':
-        #     self.entry_main.insert(0, 'Arial')
-        # else:
-        #     self.entry_main.insert(0, self.fontt)
-        # self.entry_main.config(font=(self.fontt, 10))
+        self.x_ = self.list_main.get(0, 'end').index(str(x))
 
     def change_style(self):
         x = self.list_style.curselection()
         self.stylee = self.list_style.get(x)
         self.text.config(font=(self.fontt, self.sizee, self.stylee))
         self.sample_label1.config(font=(self.fontt, self.sizee, self.stylee))
+        self.y = self.list_style.get(0, 'end').index(x)
 
     def change_size(self):
         x = self.list_size.curselection()
         self.sizee = self.list_size.get(x)
         self.text.config(font=(self.fontt, self.sizee, self.stylee))
         self.sample_label1.config(font=(self.fontt, self.sizee, self.stylee))
+        self.z = self.list_size.get(0, 'end').index(x)
 
     def cancel_(self):
         try:
@@ -308,8 +326,8 @@ class NotePad:
         self.for_name = self.initial
         real_name = self.initial.split('/')
         name = real_name[len(real_name) - 1]
-        names = name.split('.')[0]
-        self.master.title(names + ' - Psarris\' Notepad')
+        self.names = name.split('.')[0]
+        self.master.title(self.names + ' - Psarris\' Notepad')
         self.check_title()
         file.close()
 
@@ -339,7 +357,8 @@ class NotePad:
             self.e = open(self.dirr)
             if self.e.read() != self.text.get(1.0, 'end-1c'):
                 save_message = messagebox.askyesnocancel(title="Notepad",
-                                                         message='Do you want to save changes to this file?', icon='warning')
+                                                         message='Do you want to save changes to this file?',
+                                                         icon='warning')
                 if save_message == 'yes':
                     self.save_file()
                     self.dirr = ""
@@ -366,9 +385,9 @@ class NotePad:
                 self.text.delete(1.0, END)
                 self.text.insert(1.0 + 1, texxt)
         real_name = self.initial.split('/')
-        name = real_name[len(real_name)-1]
-        names = name.split('.')[0]
-        self.master.title(names + ' - Psarris\' Notepad')
+        name = real_name[len(real_name) - 1]
+        self.names = name.split('.')[0]
+        self.master.title(self.names + ' - Psarris\' Notepad')
         self.check_title()
         file.close()
 
@@ -451,59 +470,17 @@ class NotePad:
     def new_window(self):
         NotePad()
 
-    # def add_undo(self):
-    #     notes = []
-    #     note = self.text.get(1.0, 'end-1c')
-    #     if " " in note:
-    #         for i in note.split(" "):
-    #             notes.append(i)
-    #     self.noted = notes[-1]
-    #     self.index = self.text.index(tk.INSERT)
-    #     print(self.index)
-    #     print(self.noted)
-    #
-    # def undo(self):
-    #     self.text.insert(float(self.index), self.noted)
-    #     plus = float(len(self.noted))
-    #     plus = float(self.index) + plus
-    #     print(plus)
-    #     # self.text.tag_add(SEL, self.index, str(plus))
+    def undo(self, event=None):
+        self.text.event_generate('<<Undo>>')
 
     def cut(self):
-        try:
-            e = self.text.selection_get()
-            self.index = self.text.index(tk.INSERT)
-
-            # for clipboard
-            self.master.clipboard_clear()
-            self.master.clipboard_append(e)
-            self.master.update()
-
-            # in case of undo
-            t = self.text.get(0.0, 'end-1c')
-            self.text.delete(0.0, 'end-1c')
-            p = t.replace(e, "")
-
-            self.copy_string = e
-            self.text.insert(END, p)
-        except Exception as e:
-            print(e)
+        self.text.event_generate('<<Cut>>')
 
     def copy(self):
-        try:
-            self.copy_string = self.text.selection_get()
-
-            # for clipboard
-            self.master.clipboard_clear()
-            self.master.clipboard_append(self.copy_string)
-            self.master.update()
-        except Exception as e:
-            print(e)
+        self.text.event_generate('<<Copy>>')
 
     def paste(self):
-        p = self.copy_string
-        place = self.text.index(tk.INSERT)
-        self.text.insert(place, p)
+        self.text.event_generate('<<Paste>>')
 
     def select_all(self):
         pyautogui.hotkey('ctrl', 'a')
@@ -513,7 +490,7 @@ class NotePad:
 
     def zoom_in(self):
         try:
-            if 10 <= self.fontt <= 96:
+            if 10 <= self.sizee <= 96:
                 ini = self.sizee
                 ini += 4
                 self.sizee = ini
@@ -526,22 +503,18 @@ class NotePad:
 
     def zoom_out(self):
         try:
-            if self.fontt >= 14 and self.fontt <= 96:
+            if 14 <= self.sizee <= 96:
                 ini = self.sizee
                 ini -= 4
                 self.sizee = ini
                 self.text.config(font=(self.fontt, self.sizee, self.stylee))
-                print('1')
             else:
-                print('2')
                 pass
         except AttributeError:
-            if self.ini >= 14 and self.ini <= 96:
+            if 14 <= self.ini <= 96:
                 self.ini -= 4
-                print('3')
                 self.text.config(font=('Arial', self.ini, 'normal'))
             else:
-                print('4')
                 pass
 
     def update_label(self):
@@ -553,17 +526,26 @@ class NotePad:
     def check_title(self):
         try:
             file = open(self.for_name, 'r')
-            real_name = self.for_name.split('/')
-            name = real_name[len(real_name) - 1]
-            names = name.split('.')[0]
             file = file.read()
-            while self.text.get(0.0, 'end-1c') != file:
-                self.master.title('*' + names + ' - Psarris\' Notepad')
-            self.crlf.after(500, self.check_title)
+            if self.text.get(0.0, 'end-1c') != file:
+                self.master.title('*' + self.names + ' - Psarris\' Notepad')
+            else:
+                self.master.title(self.names + ' - Psarris\' Notepad')
+            self.crlf.after(100, self.check_title)
         except (FileNotFoundError, AttributeError):
-            print('error')
             pass
 
+    def selected_(self):
+        pass
+    #     if self.text.tag_ranges('sel'):
+    #         self.edit.entryconfigure('Cut', state='normal')
+    #     elif not self.text.tag_ranges('sel'):
+    #         self.edit.entryconfigure('Cut', state='disabled')
+    #     # self.menu.after(500, self.selected_)
+
+    def date(self):
+        q = datetime.today().strftime('%Y-%m-%d %H:%M')
+        self.text.insert(END, q)
 
 
 if __name__ == "__main__":
